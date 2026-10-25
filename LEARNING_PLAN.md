@@ -9,8 +9,8 @@
 | 周 | 主题 | 状态 | 完成日期 |
 |----|------|------|---------|
 | 第1周 | 原理认知 + Function Calling 基础 | ✅ 已完成 | 2026-10-22 |
-| 第2周 | 手搓最小 Agent（不用框架） | 🔜 下一步 | - |
-| 第3周 | OpenAI Agents SDK 源码精读 | ⬜ | - |
+| 第2周 | 手搓最小 Agent（不用框架） | ✅ 已完成 | 2026-10-23 |
+| 第3周 | OpenAI Agents SDK 源码精读 | 🔜 下一步 | - |
 | 第4周 | 工程问题攻克（错误处理、context 管理、安全对抗） | ⬜ | - |
 | 第5周 | MCP 协议与工具生态 | ⬜ | - |
 | 第6周 | 评估体系与可观测性 | ⬜ | - |
@@ -204,9 +204,22 @@ class MiniAgent:
 
 ### 检查点
 
-- [ ] 不依赖任何框架，agent 能自主循环完成包含多步工具调用的任务
-- [ ] 工具出错时 agent 能自我纠正（至少重试一次）
-- [ ] 理解为什么需要 max_turns 限制
+- [x] 不依赖任何框架，agent 能自主循环完成包含多步工具调用的任务  ✅ mini_agent.py 测试2 多步汇率换算
+- [x] 工具出错时 agent 能自我纠正（至少重试一次）  ✅ test_error_handling.py 三个错误场景
+- [x] 理解为什么需要 max_turns 限制  ✅ 防止 agent 无限循环消耗 token
+
+额外收获：
+- [x] 从函数签名 + docstring 自动生成 JSON Schema，理解了工具描述质量对 LLM 填参的影响
+- [x] 安全边界设计：路径限制（_safe_path）、危险命令拦截、输出截断；认识到应用层路径检查管不住子进程
+- [x] agent 的自主策略选择：list_directory 被拦后自动切换到 run_command；选 wc -l 而非逐个 count_lines
+- [x] 错误信息是写给 LLM 看的：措辞直接影响 agent 下一步是重试、换方案还是放弃
+- [x] API 调用指数退避重试、JSON 解析容错、参数类型错误的友好提示
+
+学习笔记：
+- 练习代码位置：`exercises/week2/`
+- mini_agent.py：可复用的 agent 核心（~150 行），包含 schema 自动生成、循环、错误处理
+- real_tools_agent.py：接入真实文件系统工具，完成了端到端任务（分析 Python 文件行数并写入 report.txt）
+- test_error_handling.py：验证了三类错误场景（间歇性失败、逻辑错误、数据不存在）
 
 ---
 
