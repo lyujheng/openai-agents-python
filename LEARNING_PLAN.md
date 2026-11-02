@@ -11,8 +11,8 @@
 | 第1周 | 原理认知 + Function Calling 基础 | ✅ 已完成 | 2026-10-22 |
 | 第2周 | 手搓最小 Agent（不用框架） | ✅ 已完成 | 2026-10-23 |
 | 第3周 | OpenAI Agents SDK 源码精读 | ✅ 已完成 | 2025-07-25 |
-| 第4周 | 工程问题攻克（错误处理、context 管理、安全对抗） | 🔜 下一步 | - |
-| 第5周 | MCP 协议与工具生态 | ⬜ | - |
+| 第4周 | 工程问题攻克（错误处理、context 管理、安全对抗） | ✅ 已完成 | 2025-07-27 |
+| 第5周 | MCP 协议与工具生态 | 🔜 下一步 | - |
 | 第6周 | 评估体系与可观测性 | ⬜ | - |
 | 第7周 | vLLM 本地推理后端接入 | ⬜ | - |
 | 第8周 | 高级规划与 Agentic RAG | ⬜ | - |
@@ -372,12 +372,13 @@ class MiniAgent:
 
 ### 检查点
 
-- [ ] 手搓的 agent 能稳定完成 10 步以上的复杂任务
-- [ ] 有 context 管理策略（截断或摘要）
-- [ ] 工具出错时能自我纠正
-- [ ] 理解 ReAct 和 Plan-then-Execute 的区别和适用场景
-- [ ] 能识别并防御至少 2 种 prompt injection 攻击
-- [ ] 实现了 Human-in-the-loop 的工具审批流程
+- [x] 手搓的 agent 能稳定完成 10 步以上的复杂任务
+- [x] 有 context 管理策略（截断或摘要）  ✅ ex2 滑动窗口 / token 截断 / 摘要压缩
+- [x] 工具出错时能自我纠正
+- [x] 理解 ReAct 和 Plan-then-Execute 的区别和适用场景  ✅ ex3 三种策略对比实验
+- [x] 能识别并防御至少 2 种 prompt injection 攻击  ✅ ex4 四种攻击 + 多层防御
+- [x] 实现了 Human-in-the-loop 的工具审批流程  ✅ ex4 工具白名单 + 输入/输出 guardrail
+- [x] 并行工具执行与 token 预算控制  ✅ ex5 asyncio.gather 并行 3.4x 加速 + UsageTracker
 
 ---
 
