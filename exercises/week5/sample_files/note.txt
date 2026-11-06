@@ -1,0 +1,9 @@
+这是一个测试文件。
+
+MCP（Model Context Protocol）是 Anthropic 提出的开放协议。
+它标准化了 LLM 应用与外部工具之间的通信方式。
+
+核心概念：
+- Tools：可执行的函数
+- Resources：只读数据源
+- Prompts：预置的 prompt 模板

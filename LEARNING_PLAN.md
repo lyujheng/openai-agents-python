@@ -12,12 +12,12 @@
 | 第2周 | 手搓最小 Agent（不用框架） | ✅ 已完成 | 2026-10-23 |
 | 第3周 | OpenAI Agents SDK 源码精读 | ✅ 已完成 | 2025-07-25 |
 | 第4周 | 工程问题攻克（错误处理、context 管理、安全对抗） | ✅ 已完成 | 2025-07-27 |
-| 第5周 | MCP 协议与工具生态 | 🔜 下一步 | - |
-| 第6周 | 评估体系与可观测性 | ⬜ | - |
-| 第7周 | vLLM 本地推理后端接入 | ⬜ | - |
-| 第8周 | 高级规划与 Agentic RAG | ⬜ | - |
-| 第9周 | 多模态与 Computer Use Agent | ⬜ | - |
-| 第10周 | 综合实战 + 生产部署 | ⬜ | - |
+| 第5周 | MCP 协议与工具生态 | ✅ 已完成 | 2025-07-28 |
+| 第6周 | 评估体系 + Prompt 工程 + 可观测性 | ⬜ | - |
+| 第7周 | 高级规划 + Multi-Agent + Agentic RAG | ⬜ | - |
+| 第8周 | 多模态 + Computer Use + 框架对比 | ⬜ | - |
+| 第9周 | vLLM 本地推理后端接入 | ⬜ | - |
+| 第10周 | 综合实战 | ⬜ | - |
 
 ### 第1周学习调整记录
 
@@ -34,11 +34,11 @@
 第3周  OpenAI Agents SDK 源码精读
 第4周  工程问题攻克（错误处理、context 管理、安全对抗）
 第5周  MCP 协议与工具生态
-第6周  评估体系与可观测性
-第7周  vLLM 本地推理后端接入
-第8周  高级规划与 Agentic RAG
-第9周  多模态与 Computer Use Agent
-第10周  综合实战 + 生产部署
+第6周  评估体系 + Prompt 工程 + 可观测性
+第7周  高级规划 + Multi-Agent + Agentic RAG
+第8周  多模态 + Computer Use + 框架对比
+第9周  vLLM 本地推理后端接入
+第10周  综合实战
 
 ---
 
@@ -473,18 +473,23 @@ async with MCPServerStdio(
 
 ### 检查点
 
-- [ ] 能用自己的话解释 MCP 的三大原语（Resources / Tools / Prompts）
-- [ ] 自己写过至少一个 MCP server 并接入 agent
-- [ ] 理解 stdio / SSE / streamable-http 三种 transport 的区别
-- [ ] 知道 MCP 的安全边界：server 返回内容不可信
+- [x] 能用自己的话解释 MCP 的三大原语（Resources / Tools / Prompts）  ✅ Day 1
+- [x] 自己写过至少一个 MCP server 并接入 agent  ✅ Day 2 file-tools + calc server
+- [x] 理解 stdio / SSE / streamable-http 三种 transport 的区别  ✅ Day 1 源码阅读
+- [x] 知道 MCP 的安全边界：server 返回内容不可信  ✅ Day 1 + Day 3 guardrail 实验
+- [x] 多 Server 组合使用  ✅ Day 3 exercise 1
+- [x] 工具过滤和审批机制  ✅ Day 3 exercise 2-3
+- [x] SSE transport 实际体验  ✅ Day 4 sse_server + sse_test + sse_client
+- [x] Function Calling vs MCP 对比总结  ✅ Day 5 day5_notes.md
+- [x] mini_agent 的 MCP 改造  ✅ Day 5 mini_agent_mcp_server + client，3个测试全通过
 
 ---
 
-## 第6周：评估体系与可观测性
+## 第6周：评估体系 + Prompt 工程 + 可观测性
 
 ### 目标
 
-掌握 agent 评估的方法论和工具链，学会用 tracing 调试和监控 agent 行为。这是从 demo 到生产的核心能力。
+掌握 agent 评估的方法论和工具链，建立 prompt engineering 和 Structured Output 的理论基础，学会用 tracing 和 streaming 调试和监控 agent 行为。
 
 ### Day 1：为什么需要 Eval
 
@@ -498,7 +503,9 @@ async with MCPServerStdio(
 | [Hamel Husain: Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/) | 工程实践视角的 eval 方法论 | 1h |
 | [GAIA Benchmark 论文](https://arxiv.org/abs/2311.12983) | agent benchmark 怎么设计评测任务 | 1h |
 
-### Day 2：设计你自己的 Eval
+### Day 2：设计你自己的 Eval + Prompt 工程基础
+
+#### Eval 框架设计
 
 为你第2周的 mini_agent 设计评估体系：
 
@@ -532,7 +539,27 @@ class EvalResult:
 - **鲁棒性**：工具出错时的恢复成功率
 - **安全性**：面对恶意输入的防御成功率
 
-### Day 3：主流 Benchmark 了解
+#### Prompt 工程基础理论
+
+Prompt 质量直接决定 agent 的工具调用准确率和输出稳定性：
+
+| 技巧 | 说明 | 对 Agent 的影响 |
+|------|------|----------------|
+| System Prompt 结构化 | 角色定义 + 行为约束 + 输出格式分段 | 减少工具选择错误，输出更可控 |
+| Few-shot 示例 | 在 prompt 中给出工具调用的输入输出示例 | 显著提升格式正确率，尤其对弱模型 |
+| 工具描述质量 | 工具的 description 和参数说明要精确 | 直接影响 LLM 选哪个工具、填什么参数 |
+| Chain-of-Thought | 要求 LLM 先推理再行动（ReAct 模式的基础） | 减少跳步和错误决策 |
+| 指令优先级 | system > 工具描述 > 用户输入，清晰分层 | 防御 prompt injection 的基础 |
+
+阅读材料：
+- [OpenAI Prompt Engineering Guide](https://platform.openai.com/docs/guides/prompt-engineering) — 官方最佳实践
+- [Anthropic Prompt Engineering](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering) — 另一个视角
+
+关键认知：**prompt 不是"写一句话"，而是设计 LLM 的行为规范**。好的 system prompt 类似好的函数签名——让调用者（LLM）准确理解预期行为。
+
+### Day 3：Benchmark + Structured Output 理论
+
+#### 主流 Benchmark
 
 | Benchmark | 评测目标 | 了解重点 |
 |-----------|---------|---------|
@@ -544,7 +571,42 @@ class EvalResult:
 
 目标不是跑通所有 benchmark，而是理解它们的设计思路，为自己设计 eval 提供参考。
 
-### Day 4：Tracing 与可观测性
+#### Structured Output 理论
+
+第4周 Day 1 学了基础的 `output_type=MyModel`，这里深入理解底层机制：
+
+| 主题 | 内容 | 精读路径 |
+|------|------|---------|
+| Pydantic → JSON Schema | Pydantic model 如何转成 JSON Schema | 对比 `.model_json_schema()` 和 SDK `ensure_strict_json_schema()` 的差异 |
+| strict 模式适配 | SDK 为何要做额外的 schema 转换 | 精读 `src/agents/strict_schema.py` |
+| 复杂嵌套结构 | Union 类型、可选字段、列表嵌套、递归结构 | 后续 Week 9 会在本地模型上实际测试 |
+| enum + 字面量约束 | `Literal["a", "b"]`、`Enum` 类 | 不同约束方式的表达力差异 |
+
+```python
+# 概念示例：复杂嵌套结构
+from pydantic import BaseModel
+from typing import Literal
+
+class Reference(BaseModel):
+    source: str
+    url: str | None = None
+
+class Paragraph(BaseModel):
+    text: str
+    confidence: Literal["high", "medium", "low"]
+    references: list[Reference]
+
+class Section(BaseModel):
+    title: str
+    paragraphs: list[Paragraph]
+
+class AnalysisReport(BaseModel):
+    summary: str
+    sections: list[Section]
+    overall_confidence: float  # 0.0 ~ 1.0
+```
+
+### Day 4：Tracing、Streaming 与可观测性
 
 #### SDK Tracing 深入
 
@@ -576,6 +638,29 @@ class PrintProcessor(TracingProcessor):
 # 注册 processor 并运行 agent，观察 trace 输出
 ```
 
+#### Streaming 实践
+
+流式输出是用户体验的关键，也是可观测性的一部分：
+
+| 对比 | `Runner.run()` | `Runner.run_streamed()` |
+|------|---------------|------------------------|
+| 返回方式 | 等全部完成后一次性返回 | 实时推送每个事件 |
+| 用户体验 | 等待时间长 | 逐字输出，体验好 |
+| 适用场景 | 后台任务 | 交互式对话 |
+
+```python
+# 流式输出实验
+result = Runner.run_streamed(agent, "你的任务")
+async for event in result.stream_events():
+    # 每个事件实时到达：文本片段、工具调用开始/结束、agent 切换等
+    print(event)
+```
+
+实验要点：
+- 对比 `run()` 和 `run_streamed()` 的用户体验差异
+- 流式场景下的 token 统计
+- 流式输出中途中断的处理
+
 #### 业界可观测性工具
 
 | 工具 | 定位 | 了解重点 |
@@ -600,146 +685,22 @@ class PrintProcessor(TracingProcessor):
 ### 检查点
 
 - [ ] 有一套可复用的 eval 框架，能批量评测 agent
+- [ ] 掌握 prompt engineering 核心技巧：结构化 prompt、few-shot、工具描述优化
+- [ ] 理解 Structured Output 底层机制：Pydantic ↔ JSON Schema、strict 模式适配
 - [ ] 理解 SWE-bench、GAIA 等主流 benchmark 的设计思路
 - [ ] 能自定义 tracing processor，可视化 agent 的执行过程
+- [ ] 掌握 `run()` vs `run_streamed()` 的差异和流式事件处理
 - [ ] 完成一次 eval 驱动的改进循环
 
 ---
 
-## 第7周：vLLM 本地推理后端接入
+## 第7周：高级规划 + Multi-Agent + Agentic RAG
 
 ### 目标
 
-把 agent 的推理后端从云端 API 替换为本地 vLLM 部署，发挥你的技术优势。同时掌握约束解码（constrained decoding）在 agent 场景的应用。
+掌握超越 ReAct 的高级规划算法、多 Agent 协作模式、Agentic RAG 系统设计，以及 agent 状态管理和成本优化策略。本周理论与实践并重。
 
-### Day 1：vLLM 的 OpenAI 兼容 API
-
-vLLM 原生支持 OpenAI 兼容的 API server，这是最快的接入路径：
-
-```bash
-# 启动 vLLM server（以 Qwen2.5 为例）
-python -m vllm.entrypoints.openai.api_server \
-    --model Qwen/Qwen2.5-7B-Instruct \
-    --port 8000 \
-    --enable-auto-tool-choice \
-    --tool-call-parser hermes
-```
-
-关键参数：
-- `--enable-auto-tool-choice`：启用 function calling 支持
-- `--tool-call-parser`：选择工具调用解析器（hermes / mistral / llama3_json 等，取决于模型）
-- `--guided-decoding-backend`：约束解码后端（outlines / lm-format-enforcer）
-
-### Day 2：接入手搓的 mini_agent
-
-```python
-from openai import OpenAI
-
-# 只需要改 base_url，代码几乎不用动
-client = OpenAI(base_url="http://localhost:8000/v1", api_key="not-needed")
-```
-
-测试要点：
-- function calling 是否正常工作（不同模型的 tool calling 能力差异很大）
-- 输出格式稳定性（本地模型比 GPT-4o 弱，可能需要更强的 prompt 约束）
-- 推理速度 vs 云端 API 的对比
-
-### Day 3：接入 OpenAI Agents SDK
-
-SDK 已经有现成的接入方式，参考 `examples/model_providers/custom_example_provider.py`：
-
-```python
-from openai import AsyncOpenAI
-from agents import (
-    Agent, Model, ModelProvider, OpenAIChatCompletionsModel,
-    RunConfig, Runner, set_tracing_disabled,
-)
-
-# 指向本地 vLLM server
-client = AsyncOpenAI(base_url="http://localhost:8000/v1", api_key="not-needed")
-set_tracing_disabled(disabled=True)
-
-class VLLMProvider(ModelProvider):
-    def get_model(self, model_name: str | None) -> Model:
-        return OpenAIChatCompletionsModel(
-            model=model_name or "Qwen/Qwen2.5-7B-Instruct",
-            openai_client=client,
-        )
-
-agent = Agent(name="Local Agent", instructions="你是一个有用的助手。", tools=[...])
-result = await Runner.run(
-    agent, "你的任务...",
-    run_config=RunConfig(model_provider=VLLMProvider()),
-)
-```
-
-### Day 4：约束解码与 Agent
-
-约束解码（Guided/Constrained Decoding）是 vLLM 的独特能力，对 agent 场景特别有价值：
-
-| 场景 | 方法 | 效果 |
-|------|------|------|
-| 强制 JSON 输出 | `guided_json=schema` | 100% 保证输出合法 JSON |
-| 强制工具调用格式 | `guided_regex=pattern` | 避免本地模型的格式错误 |
-| 结构化输出 | `guided_json=pydantic_schema` | 替代 OpenAI 的 Structured Output |
-| 选择约束 | `guided_choice=["opt1", "opt2"]` | 强制输出在指定选项中 |
-
-实验：
-```python
-# vLLM 的约束解码 API（通过 extra_body 传递）
-response = client.chat.completions.create(
-    model="Qwen/Qwen2.5-7B-Instruct",
-    messages=[...],
-    extra_body={
-        "guided_json": {
-            "type": "object",
-            "properties": {
-                "action": {"type": "string", "enum": ["search", "read", "write"]},
-                "args": {"type": "object"}
-            },
-            "required": ["action", "args"]
-        }
-    }
-)
-```
-
-对比实验：同一个任务，有约束解码 vs 无约束解码的输出稳定性差异。
-
-### Day 5：性能调优（发挥你的优势）
-
-这是你的算子开发和 vLLM 经验最能发力的地方：
-
-| 优化方向 | 方法 | 你的优势 |
-|---------|------|---------|
-| 推理延迟 | Speculative decoding、prefix caching | 你熟悉 vLLM 内部实现 |
-| 吞吐量 | 批量推理、continuous batching | vLLM 的核心能力，你已经懂了 |
-| 内存优化 | PagedAttention 参数调优、量化 | 算子开发经验 |
-| 工具调用延迟 | 并行工具执行 + async | 在 agent 层面优化 |
-| 多 agent 场景 | 多个 agent 共享同一个 vLLM instance | 合理配置 max_num_seqs |
-
-实验：对比以下场景的端到端延迟和成本
-1. 云端 GPT-4o-mini
-2. 本地 vLLM + Qwen2.5-7B
-3. 本地 vLLM + Qwen2.5-72B（如果显存够）
-4. 本地 vLLM + Qwen2.5-7B + 约束解码
-
-### 检查点
-
-- [ ] vLLM server 启动并支持 function calling
-- [ ] 手搓 agent 和 SDK agent 都能对接本地 vLLM
-- [ ] 掌握约束解码在 agent 场景的用法
-- [ ] 清楚不同模型的 tool calling 能力差异（哪些模型好用，哪些容易出错）
-- [ ] 有基础的性能对比数据
-
----
-
-## 第8周：高级规划与 Agentic RAG
-
-### 目标
-
-掌握超越 ReAct 的高级规划算法，以及 agent 驱动的 RAG 系统设计。
-
-### Day 1-2：高级规划算法
+### Day 1：高级规划算法
 
 #### ReAct 的局限
 
@@ -784,21 +745,72 @@ async def reflexion_agent(task: str, max_attempts: int = 3):
     memory = []  # 存放过去的经验教训
 
     for attempt in range(max_attempts):
-        # 执行任务（带上过去的经验）
         result = await execute_with_memory(task, memory)
-
-        # 评估结果
         evaluation = await evaluate_result(task, result)
 
         if evaluation.success:
             return result
 
-        # 反思失败原因，存入记忆
         reflection = await reflect_on_failure(task, result, evaluation)
         memory.append(reflection)
 
     return "多次尝试均失败"
 ```
+
+### Day 2：Multi-Agent 协作模式
+
+#### 5 种协作模式
+
+| 模式 | 原理 | 适用场景 | SDK 机制 |
+|------|------|---------|---------|
+| Serial Handoff（串行交接） | Agent A 完成后交给 Agent B | 流水线式分工，每步有明确输入输出 | `handoffs=[agent_b]` |
+| Parallel Fan-out（并行分发） | 多个 Agent 同时处理不同子任务，汇总结果 | 子任务独立、可并行 | `asyncio.gather` + 多个 `Runner.run` |
+| Debate（辩论） | 两个 Agent 对同一问题给出不同答案，第三个 Agent 裁判 | 需要多角度分析的决策 | 多轮 handoff + judge agent |
+| Voting（投票） | 多个 Agent 独立回答，取多数一致的结果 | 需要高可靠性的关键判断 | 并行执行 + 结果聚合逻辑 |
+| Hierarchical（层级） | Manager Agent 分配任务给 Worker Agent | 复杂项目管理，动态子任务 | Manager 的 tools 中包含调用 Worker 的函数 |
+
+#### 关键设计决策
+
+| 问题 | 选择依据 |
+|------|---------|
+| 用 handoff 还是 tools 调用子 Agent？ | handoff = 控制权转移（当前 agent 退出），tools = 子任务（当前 agent 继续） |
+| 用串行还是并行？ | 子任务之间有依赖 → 串行；子任务独立 → 并行 |
+| 什么时候用单 Agent 而不是多 Agent？ | 多 Agent 的协调成本（额外 token、延迟、复杂度）大于收益时，用单 Agent |
+| 消息如何在 Agent 之间传递？ | handoff 传递完整对话历史；tools 调用只传参数和返回值 |
+
+```python
+# 并行 fan-out 模式实验
+async def parallel_research(question: str):
+    results = await asyncio.gather(
+        Runner.run(searcher_agent, f"搜索相关论文: {question}"),
+        Runner.run(code_agent, f"搜索相关开源实现: {question}"),
+        Runner.run(critic_agent, f"列出该方案的潜在问题: {question}"),
+    )
+    combined = "\n".join(r.final_output for r in results)
+    final = await Runner.run(synthesizer_agent, f"综合以下调研结果:\n{combined}")
+    return final
+```
+
+参考 SDK 示例：
+- `examples/agent_patterns/` — 各种 agent 编排模式
+- `examples/handoffs/` — handoff 机制用法
+
+#### Workflow vs Agent 的架构决策
+
+来自 Anthropic 的 Building Effective Agents：
+
+| 维度 | 确定性 Workflow | 自主 Agent |
+|------|---------------|-----------|
+| 可预测性 | 高，每步确定 | 低，LLM 自主决策 |
+| 灵活性 | 低，固定流程 | 高，动态适应 |
+| 调试难度 | 低 | 高 |
+| 成本 | 可预测 | 不可预测 |
+| 适用场景 | 流程明确、需要可靠性 | 开放式任务、需要灵活应对 |
+
+核心原则：
+- **能用 workflow 解决的就不用 agent**（prompt chaining、routing、parallelization）
+- **只在需要动态决策、多步工具使用、自我纠错时才用 agent**
+- **复杂系统通常是 workflow + agent 的混合架构**
 
 ### Day 3-4：Agentic RAG
 
@@ -812,7 +824,6 @@ async def reflexion_agent(task: str, max_attempts: int = 3):
 #### 实现一个 Agentic RAG 系统
 
 ```python
-# 工具集
 tools = {
     "search_docs": search_docs,         # 语义搜索
     "keyword_search": keyword_search,     # 关键词搜索
@@ -821,7 +832,6 @@ tools = {
     "ask_clarification": ask_user,        # 向用户追问
 }
 
-# Agent 的 system prompt
 AGENTIC_RAG_PROMPT = """你是一个研究助手。用户会问你问题，你需要通过搜索文档来找到答案。
 
 策略：
@@ -845,7 +855,38 @@ AGENTIC_RAG_PROMPT = """你是一个研究助手。用户会问你问题，你�
 | 多源聚合 | 从多个数据源检索并合并结果 | 每个数据源作为一个工具 |
 | 验证回路 | 检查生成的回答是否有文档支持 | 用另一个 LLM 调用做 fact-checking |
 
-### Day 5：评估规划和 RAG 质量
+### Day 5：状态管理 + 成本优化 + 质量评估
+
+#### 状态管理与 Session Persistence
+
+长时间运行的 agent 需要管理对话状态：中断恢复、跨请求记忆、多轮对话连续性：
+
+| 概念 | 说明 | SDK 实现 |
+|------|------|---------|
+| `previous_response_id` | Responses API 的服务端对话延续 | 自动串联，不需要客户端重发历史 |
+| `conversation_id` | 服务端对话分组标识 | 通过 `RunConfig` 传入 |
+| Session Persistence | 客户端主动保存/恢复 run 状态 | `Runner.run(..., session=my_session)` |
+| RunState | 序列化的运行状态，支持中断后恢复 | `result.to_state()` / `Runner.run(state=saved_state)` |
+| 对话压缩 | 长对话中途做摘要替换历史消息 | 手动实现或用 `previous_response_id` 让服务端管理 |
+
+精读路径：
+- `src/agents/run_config.py` → `conversation_id`、`auto_previous_response_id`
+- `src/agents/result.py` → `RunResult.to_state()` 序列化
+- `src/agents/run.py` → `state` 参数如何恢复执行
+
+#### 成本优化策略
+
+Agent 的 token 消耗通常比单次对话高很多（一次 run 可能 10~100 次 LLM 调用）：
+
+| 策略 | 说明 | 适用场景 |
+|------|------|---------|
+| 模型路由 | 简单任务用小模型，复杂任务用大模型 | 混合工作负载 |
+| Prompt 缓存 | 相同 system prompt 前缀复用 KV cache | 高并发、长 system prompt |
+| 工具调用缓存 | 幂等工具的相同参数结果缓存 | 搜索、查询类工具 |
+| 对话压缩 | 长对话中途做摘要，减少 input token | 超长对话 |
+| 提前终止 | max_turns、token budget 限制无效循环 | 防止 agent 死循环 |
+
+#### 质量评估
 
 用第6周的 eval 框架评测：
 - 不同规划算法在相同任务上的对比（ReAct vs Plan-and-Solve vs ToT）
@@ -856,17 +897,20 @@ AGENTIC_RAG_PROMPT = """你是一个研究助手。用户会问你问题，你�
 
 - [ ] 实现了 Tree of Thoughts 或 Reflexion 的简化版
 - [ ] 理解不同规划算法的适用场景
+- [ ] 掌握 Multi-Agent 5 种协作模式，能根据场景选型
+- [ ] 理解 Workflow vs Agent 的架构决策原则
 - [ ] 实现了一个 Agentic RAG 系统
-- [ ] 能解释 Agentic RAG 相比简单 RAG 的优势和代价
+- [ ] 理解 Session Persistence 和 RunState 的作用
+- [ ] 掌握 agent 成本优化策略
 - [ ] 有规划算法和 RAG 方案的量化对比数据
 
 ---
 
-## 第9周：多模态与 Computer Use Agent
+## 第8周：多模态 + Computer Use + 框架对比
 
 ### 目标
 
-掌握多模态 agent（视觉 + 语音）和 Computer Use agent（操作真实环境），拓展 agent 的感知和行动边界。
+掌握多模态 agent（视觉 + 语音）和 Computer Use agent（操作真实环境），了解主流框架设计差异，拓展 agent 的感知和行动边界。
 
 ### Day 1-2：多模态 Agent
 
@@ -924,7 +968,6 @@ SDK 提供了 Realtime 和 Voice 模块，可以构建语音 agent：
 # 4. 执行操作
 # 5. 再次截图，循环
 
-# 工具定义
 tools = [
     {
         "type": "computer_20241022",
@@ -940,7 +983,6 @@ tools = [
 更实用的方向——让 agent 操作浏览器：
 
 ```python
-# 使用 Playwright 构建浏览器工具
 from playwright.async_api import async_playwright
 
 async def browse_tools():
@@ -979,7 +1021,7 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 
 ### Day 5：框架横向对比
 
-在开始第10周综合实战前，了解主流框架的设计差异：
+在进入 vLLM 本地部署之前，了解主流框架的设计差异：
 
 | 框架 | 核心理念 | 适用场景 | 了解方式 |
 |------|---------|---------|---------|
@@ -1004,11 +1046,157 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 
 ---
 
-## 第10周：综合实战 + 生产部署
+## 第9周：vLLM 本地推理后端接入
 
 ### 目标
 
-综合前 9 周所学，完成两个实战项目，并掌握 agent 从 demo 到生产的工程要点。
+把 agent 的推理后端从云端 API 替换为本地 vLLM 部署，发挥你的算子开发和 vLLM 源码级经验。同时掌握约束解码在 agent 场景的应用，将前几周学到的 Prompt 工程和 Structured Output 理论付诸实践。
+
+### Day 1：vLLM 的 OpenAI 兼容 API
+
+vLLM 原生支持 OpenAI 兼容的 API server，这是最快的接入路径：
+
+```bash
+# 启动 vLLM server（以 Qwen2.5 为例）
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen2.5-7B-Instruct \
+    --port 8000 \
+    --enable-auto-tool-choice \
+    --tool-call-parser hermes
+```
+
+关键参数：
+- `--enable-auto-tool-choice`：启用 function calling 支持
+- `--tool-call-parser`：选择工具调用解析器（hermes / mistral / llama3_json 等，取决于模型）
+- `--guided-decoding-backend`：约束解码后端（outlines / lm-format-enforcer）
+
+### Day 2：接入手搓 Agent + Prompt 工程实战
+
+```python
+from openai import OpenAI
+
+# 只需要改 base_url，代码几乎不用动
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="not-needed")
+```
+
+测试要点：
+- function calling 是否正常工作（不同模型的 tool calling 能力差异很大）
+- 输出格式稳定性（本地模型比 GPT-4o 弱，可能需要更强的 prompt 约束）
+- 推理速度 vs 云端 API 的对比
+
+#### Prompt 工程实战
+
+本地模型对 prompt 质量更敏感，用第6周学的理论做实验：
+
+| 实验 | 对比内容 | 观察指标 |
+|------|---------|---------|
+| Prompt 结构 | 松散描述 vs 结构化 prompt vs 结构化+few-shot | 工具调用成功率 |
+| 工具描述 | 精确描述 vs 模糊描述 | 工具选择准确率 |
+| 模型适配 | 同一 prompt 在 Qwen vs Llama 上 | 格式正确率差异 |
+
+### Day 3：接入 OpenAI Agents SDK
+
+参考 `examples/model_providers/custom_example_provider.py`：
+
+```python
+from openai import AsyncOpenAI
+from agents import (
+    Agent, Model, ModelProvider, OpenAIChatCompletionsModel,
+    RunConfig, Runner, set_tracing_disabled,
+)
+
+client = AsyncOpenAI(base_url="http://localhost:8000/v1", api_key="not-needed")
+set_tracing_disabled(disabled=True)
+
+class VLLMProvider(ModelProvider):
+    def get_model(self, model_name: str | None) -> Model:
+        return OpenAIChatCompletionsModel(
+            model=model_name or "Qwen/Qwen2.5-7B-Instruct",
+            openai_client=client,
+        )
+
+agent = Agent(name="Local Agent", instructions="你是一个有用的助手。", tools=[...])
+result = await Runner.run(
+    agent, "你的任务...",
+    run_config=RunConfig(model_provider=VLLMProvider()),
+)
+```
+
+### Day 4：约束解码 + Structured Output 实战
+
+#### 约束解码
+
+约束解码（Guided/Constrained Decoding）是 vLLM 的独特能力：
+
+| 场景 | 方法 | 效果 |
+|------|------|------|
+| 强制 JSON 输出 | `guided_json=schema` | 100% 保证输出合法 JSON |
+| 强制工具调用格式 | `guided_regex=pattern` | 避免本地模型的格式错误 |
+| 结构化输出 | `guided_json=pydantic_schema` | 替代 OpenAI 的 Structured Output |
+| 选择约束 | `guided_choice=["opt1", "opt2"]` | 强制输出在指定选项中 |
+
+```python
+response = client.chat.completions.create(
+    model="Qwen/Qwen2.5-7B-Instruct",
+    messages=[...],
+    extra_body={
+        "guided_json": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["search", "read", "write"]},
+                "args": {"type": "object"}
+            },
+            "required": ["action", "args"]
+        }
+    }
+)
+```
+
+#### Structured Output 实战
+
+用第6周学的复杂嵌套结构（AnalysisReport 模型），在本地模型上实测：
+- 对比 `output_type=AnalysisReport` 在云端 vs 本地的成功率
+- 对比约束解码 vs 无约束解码的输出稳定性
+- 测试 Union 类型、递归结构等边界情况
+
+### Day 5：性能调优 + 成本对比
+
+这是你的算子开发和 vLLM 经验最能发力的地方：
+
+| 优化方向 | 方法 | 你的优势 |
+|---------|------|---------|
+| 推理延迟 | Speculative decoding、prefix caching | 你熟悉 vLLM 内部实现 |
+| 吞吐量 | 批量推理、continuous batching | vLLM 的核心能力，你已经懂了 |
+| 内存优化 | PagedAttention 参数调优、量化 | 算子开发经验 |
+| 工具调用延迟 | 并行工具执行 + async | 在 agent 层面优化 |
+| 多 agent 场景 | 多个 agent 共享同一个 vLLM instance | 合理配置 max_num_seqs |
+
+#### 端到端成本对比
+
+对比以下场景的延迟、token 消耗和成本：
+1. 云端 GPT-4o-mini
+2. 本地 vLLM + Qwen2.5-7B
+3. 本地 vLLM + Qwen2.5-72B（如果显存够）
+4. 本地 vLLM + Qwen2.5-7B + 约束解码
+5. 模型路由策略（小模型简单步骤 + 大模型关键决策）
+
+### 检查点
+
+- [ ] vLLM server 启动并支持 function calling
+- [ ] 手搓 agent 和 SDK agent 都能对接本地 vLLM
+- [ ] Prompt 工程技巧在本地模型上验证：结构化 prompt、few-shot、工具描述优化
+- [ ] 掌握约束解码在 agent 场景的用法
+- [ ] 复杂 Structured Output 在本地模型上实测
+- [ ] 清楚不同模型的 tool calling 能力差异
+- [ ] 有端到端的性能和成本对比数据
+
+---
+
+## 第10周：综合实战
+
+### 目标
+
+综合前 9 周所学，完成两个实战项目，掌握 agent 从 demo 到生产的工程要点。本周全部是动手实践。
 
 ### 项目 A：代码分析 Agent（Day 1-3）
 
@@ -1018,7 +1206,7 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 - 文件读取工具、代码执行工具
 - 多步规划（先扫描目录→再分析关键文件→最后汇总）
 - 结构化输出（Pydantic model 定义报告格式）
-- vLLM 本地推理
+- vLLM 本地推理（或云端 API）
 - MCP 工具集成
 - Eval 评估质量
 
@@ -1074,7 +1262,7 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 
 参考仓库中的 `examples/research_bot/` 和 `examples/financial_research_agent/`。
 
-### Day 6：生产部署要点
+### Day 6：生产部署实操
 
 从 demo 到 production 需要解决的问题：
 
@@ -1088,27 +1276,12 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 | 可靠性 | 外部服务故障时的降级 | 重试、熔断、fallback |
 | 监控告警 | 实时监控 agent 健康状态 | Prometheus + Grafana / 自定义 metrics |
 
+动手实践：用 FastAPI 把项目 A 或 B 包装成 API 服务，实现会话管理和 token 限额。
+
 参考 SDK 的相关模块：
 - `src/agents/usage.py`：token 使用量追踪
 - `src/agents/tracing/`：可观测性
 - `src/agents/run_config.py`：运行时配置
-
-#### Workflow vs Agent 的架构决策
-
-这是一个关键的架构判断力，来自 Anthropic 的 Building Effective Agents：
-
-| 维度 | 确定性 Workflow | 自主 Agent |
-|------|---------------|-----------|
-| 可预测性 | 高，每步确定 | 低，LLM 自主决策 |
-| 灵活性 | 低，固定流程 | 高，动态适应 |
-| 调试难度 | 低 | 高 |
-| 成本 | 可预测 | 不可预测 |
-| 适用场景 | 流程明确、需要可靠性 | 开放式任务、需要灵活应对 |
-
-实践建议：
-- **能用 workflow 解决的就不用 agent**（prompt chaining、routing、parallelization）
-- **只在需要动态决策、多步工具使用、自我纠错时才用 agent**
-- **复杂系统通常是 workflow + agent 的混合架构**
 
 ### Day 7：复盘和知识整理
 
@@ -1128,8 +1301,7 @@ SDK 的沙箱实现参考：`src/agents/sandbox/`
 
 - [ ] 完成代码分析 agent，能端到端跑通，有 eval 结果
 - [ ] 完成多 agent 研究系统
-- [ ] 理解 Workflow vs Agent 的选型原则
-- [ ] 了解生产部署的核心工程问题
+- [ ] 用 FastAPI 包装了 agent 服务，有会话管理和 token 限额
 - [ ] 有一份完整的个人知识库
 
 ---
