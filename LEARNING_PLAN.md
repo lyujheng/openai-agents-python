@@ -14,7 +14,7 @@
 | 第4周 | 工程问题攻克（错误处理、context 管理、安全对抗） | ✅ 已完成 | 2025-07-27 |
 | 第5周 | MCP 协议与工具生态 | ✅ 已完成 | 2025-07-28 |
 | 第6周 | 评估体系 + Prompt 工程 + 可观测性 | ✅ 已完成 | 2026-11-14 |
-| 第7周 | 高级规划 + Multi-Agent + Agentic RAG | ⬜ | - |
+| 第7周 | 高级规划 + Multi-Agent + Agentic RAG | ✅ 已完成 | 2025-07-29 |
 | 第8周 | 多模态 + Computer Use + 框架对比 | ⬜ | - |
 | 第9周 | vLLM 本地推理后端接入 | ⬜ | - |
 | 第10周 | 综合实战 | ⬜ | - |
@@ -684,13 +684,13 @@ async for event in result.stream_events():
 
 ### 检查点
 
-- [ ] 有一套可复用的 eval 框架，能批量评测 agent
-- [ ] 掌握 prompt engineering 核心技巧：结构化 prompt、few-shot、工具描述优化
-- [ ] 理解 Structured Output 底层机制：Pydantic ↔ JSON Schema、strict 模式适配
-- [ ] 理解 SWE-bench、GAIA 等主流 benchmark 的设计思路
-- [ ] 能自定义 tracing processor，可视化 agent 的执行过程
-- [ ] 掌握 `run()` vs `run_streamed()` 的差异和流式事件处理
-- [ ] 完成一次 eval 驱动的改进循环
+- [x] 有一套可复用的 eval 框架，能批量评测 agent
+- [x] 掌握 prompt engineering 核心技巧：结构化 prompt、few-shot、工具描述优化
+- [x] 理解 Structured Output 底层机制：Pydantic ↔ JSON Schema、strict 模式适配
+- [x] 理解 SWE-bench、GAIA 等主流 benchmark 的设计思路
+- [x] 能自定义 tracing processor，可视化 agent 的执行过程
+- [x] 掌握 `run()` vs `run_streamed()` 的差异和流式事件处理
+- [x] 完成一次 eval 驱动的改进循环
 
 ---
 
@@ -895,14 +895,14 @@ Agent 的 token 消耗通常比单次对话高很多（一次 run 可能 10~100 
 
 ### 检查点
 
-- [ ] 实现了 Tree of Thoughts 或 Reflexion 的简化版
-- [ ] 理解不同规划算法的适用场景
-- [ ] 掌握 Multi-Agent 5 种协作模式，能根据场景选型
-- [ ] 理解 Workflow vs Agent 的架构决策原则
-- [ ] 实现了一个 Agentic RAG 系统
-- [ ] 理解 Session Persistence 和 RunState 的作用
-- [ ] 掌握 agent 成本优化策略
-- [ ] 有规划算法和 RAG 方案的量化对比数据
+- [x] 实现了 Tree of Thoughts 或 Reflexion 的简化版
+- [x] 理解不同规划算法的适用场景
+- [x] 掌握 Multi-Agent 5 种协作模式，能根据场景选型
+- [x] 理解 Workflow vs Agent 的架构决策原则
+- [x] 实现了一个 Agentic RAG 系统
+- [x] 理解 Session Persistence 和 RunState 的作用
+- [x] 掌握 agent 成本优化策略
+- [x] 有规划算法和 RAG 方案的量化对比数据
 
 ---
 
